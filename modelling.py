@@ -1,6 +1,15 @@
 import random
 import math
-import time
+
+
+file_paths = {
+    'x51': 'ModellingLocalSearch\data\\x51.txt',
+    'y51': 'ModellingLocalSearch\data\\y51.txt',
+    'dem51': 'ModellingLocalSearch\data\\dem51.txt',
+    'x76': 'ModellingLocalSearch\data\\x76.txt',
+    'y76': 'ModellingLocalSearch\data\\y76.txt',
+    'dem76': 'ModellingLocalSearch\data\\dem76.txt'
+}
 
 # Function to read the files and return the data as a list of floats
 def load_data(file_path):
@@ -29,48 +38,65 @@ def evaluate_solution(solution, x, y, dem):
         total_distance += min_distance * dem[i]
     return total_distance
 
-# Main local search function
-def local_search(x, y, dem, p, max_iterations=10000):
-    start_time = time.time()
+# Perturbation function
+def perturb_solution(solution, x, y, perturbation_strength):
+    perturbed_solution = solution.copy()
+    for _ in range(perturbation_strength):
+        facility_to_replace = random.choice(perturbed_solution)
+        new_facility = (random.choice(x), random.choice(y))
+        perturbed_solution.remove(facility_to_replace)
+        perturbed_solution.append(new_facility)
+    return perturbed_solution
+
+def iterated_local_search(x, y, dem, p, max_iterations_per_local_search=1000, num_restarts=5, perturbation_strength=2):
     s = generate_initial_solution(x, y, p)
     best_solution = s
     best_evaluation = evaluate_solution(s, x, y, dem)
     
-    for iteration in range(max_iterations):
-        s_new = s.copy()
-        facility_to_replace = random.choice(s_new)
-        new_facility = (random.choice(x), random.choice(y))
-        s_new.remove(facility_to_replace)
-        s_new.append(new_facility)
-        current_evaluation = evaluate_solution(s_new, x, y, dem)
-        if current_evaluation < best_evaluation:
-            best_solution = s_new
-            best_evaluation = current_evaluation
-        if iteration % 1000 == 0:
-            print(f"Iteration: {iteration}, Best Evaluation: {best_evaluation}")
-        if time.time() - start_time > 60:
-            print("Stopping early due to time constraint.")
-            break
+    for restart in range(num_restarts):
+        s = best_solution  # Start with the best found solution
+        print(f"\nStarting restart {restart + 1} with initial solution: {s}")
+        for iteration in range(max_iterations_per_local_search):
+            s_new = s.copy()
+            facility_to_replace = random.choice(s_new)
+            new_facility = (random.choice(x), random.choice(y))
+            s_new.remove(facility_to_replace)
+            s_new.append(new_facility)
+            current_evaluation = evaluate_solution(s_new, x, y, dem)
+            if current_evaluation < best_evaluation:
+                best_solution = s_new
+                best_evaluation = current_evaluation
+                print(f"\n--> New best solution found at iteration {iteration} of restart {restart + 1}:")
+                print(f"    Evaluation: {best_evaluation:.2f}")
+                print(f"    Solution: {best_solution}")
 
-    end_time = time.time()
-    print(f"Completed local search in {end_time - start_time:.2f} seconds for p={p}.")
-    print(f"Total iterations: {iteration}")
-    print(f"Best solution found for p={p}: {best_solution}")
-    print(f"Best solution evaluation for p={p}: {best_evaluation}")
+            # Print the best evaluation every 1000 iterations
+            if iteration % 1000 == 0:
+                print(f"At iteration {iteration}, current best evaluation: {best_evaluation:.2f}")
+
+        # Perturb the best solution to escape local optima
+        s = perturb_solution(best_solution, x, y, perturbation_strength)
+        print(f"\nPerturbed solution set at the end of restart {restart + 1}: {s}")
+
+    print(f"\nCompleted iterated local search after {num_restarts} restarts.")
+    print(f"Best solution found: {best_solution}")
+    print(f"Best solution evaluation: {best_evaluation:.2f}")
     return best_solution, best_evaluation
 
+
+
 # Load the data for eil51 and eil76 instances
-x51, y51, dem51 = load_data('ModellingLocalSearch\data\dem51.txt'), load_data('ModellingLocalSearch\data\y51.txt'), load_data('ModellingLocalSearch\data\dem51.txt')
-x76, y76, dem76 = load_data('ModellingLocalSearch\data\\x76.txt'), load_data('ModellingLocalSearch\data\y76.txt'), load_data('ModellingLocalSearch\data\dem76.txt')
+x51, y51, dem51 = load_data(file_paths['x51']), load_data(file_paths['y51']), load_data(file_paths['dem51'])
+x76, y76, dem76 = load_data(file_paths['x76']), load_data(file_paths['y76']), load_data(file_paths['dem76'])
 
-# Execute the local search for eil51 with p = 3, 4, 5
-print("Starting local search for eil51...")
+# Execute the iterated local search for eil51 with p = 3, 4, 5
+print("Running iterated local search for eil51...")
 for p in [3, 4, 5]:
-    print(f"\nRunning local search for eil51 with p={p}")
-    local_search(x51, y51, dem51, p)
+    print(f"\nRunning iterated local search for eil51 with p={p}")
+    iterated_local_search(x51, y51, dem51, p)
 
-# Execute the local search for eil76 with p = 9, 10, 11
-print("\nStarting local search for eil76...")
+# Execute the iterated local search for eil76 with p = 9, 10, 11
+print("\nRunning iterated local search for eil76...")
 for p in [9, 10, 11]:
-    print(f"\nRunning local search for eil76 with p={p}")
-    local_search(x76, y76, dem76, p)
+    print(f"\nRunning iterated local search for eil76 with p={p}")
+    iterated_local_search(x76, y76, dem76, p)
