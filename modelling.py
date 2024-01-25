@@ -1,14 +1,15 @@
 import random
 import math
+import time
 
-
+start_time = time.time()
 file_paths = {
-    'x51': 'ModellingLocalSearch\data\\x51.txt',
-    'y51': 'ModellingLocalSearch\data\\y51.txt',
-    'dem51': 'ModellingLocalSearch\data\\dem51.txt',
-    'x76': 'ModellingLocalSearch\data\\x76.txt',
-    'y76': 'ModellingLocalSearch\data\\y76.txt',
-    'dem76': 'ModellingLocalSearch\data\\dem76.txt'
+    'x51': 'x51.txt',
+    'y51': 'y51.txt',
+    'dem51': 'dem51.txt',
+    'x76': 'x76.txt',
+    'y76': 'y76.txt',
+    'dem76': 'dem76.txt'
 }
 
 # Function to read the files and return the data as a list of floats
@@ -42,10 +43,14 @@ def evaluate_solution(solution, x, y, dem):
 def perturb_solution(solution, x, y, perturbation_strength):
     perturbed_solution = solution.copy()
     for _ in range(perturbation_strength):
+        perturbation_start_time = time.time()  # Record the start time of the perturbation
+    
         facility_to_replace = random.choice(perturbed_solution)
         new_facility = (random.choice(x), random.choice(y))
         perturbed_solution.remove(facility_to_replace)
         perturbed_solution.append(new_facility)
+        perturbation_end_time = time.time()  # Record the end time of the iteration
+        perturbation_duration = perturbation_end_time - perturbation_start_time
     return perturbed_solution
 
 def iterated_local_search(x, y, dem, p, max_iterations_per_local_search=1000, num_restarts=5, perturbation_strength=2):
@@ -54,6 +59,7 @@ def iterated_local_search(x, y, dem, p, max_iterations_per_local_search=1000, nu
     best_evaluation = evaluate_solution(s, x, y, dem)
     
     for restart in range(num_restarts):
+        iteration_start_time = time.time()  # Record the start time of the iteration
         s = best_solution  # Start with the best found solution
         print(f"\nStarting restart {restart + 1} with initial solution: {s}")
         for iteration in range(max_iterations_per_local_search):
@@ -66,9 +72,13 @@ def iterated_local_search(x, y, dem, p, max_iterations_per_local_search=1000, nu
             if current_evaluation < best_evaluation:
                 best_solution = s_new
                 best_evaluation = current_evaluation
+                iteration_end_time = time.time()  # Record the end time of the iteration
+                iteration_duration = iteration_end_time - iteration_start_time
+
                 print(f"\n--> New best solution found at iteration {iteration} of restart {restart + 1}:")
                 print(f"    Evaluation: {best_evaluation:.2f}")
                 print(f"    Solution: {best_solution}")
+                print(f"    Iteration duration is: {iteration_duration}")
 
             # Print the best evaluation every 1000 iterations
             if iteration % 1000 == 0:
@@ -77,6 +87,7 @@ def iterated_local_search(x, y, dem, p, max_iterations_per_local_search=1000, nu
         # Perturb the best solution to escape local optima
         s = perturb_solution(best_solution, x, y, perturbation_strength)
         print(f"\nPerturbed solution set at the end of restart {restart + 1}: {s}")
+        #print(f"\nPerturbed solution duration at the end of restart {perturbation_duration})
 
     print(f"\nCompleted iterated local search after {num_restarts} restarts.")
     print(f"Best solution found: {best_solution}")
@@ -100,3 +111,7 @@ print("\nRunning iterated local search for eil76...")
 for p in [9, 10, 11]:
     print(f"\nRunning iterated local search for eil76 with p={p}")
     iterated_local_search(x76, y76, dem76, p)
+
+end_time= time.time()
+total_runtime = end_time - start_time
+print(f"Total run time of the script: {total_runtime:.2f} seconds.")
