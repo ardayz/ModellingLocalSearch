@@ -1,6 +1,27 @@
 import random
 import math
 import time
+import matplotlib.pyplot as plt
+
+def plot_facilities_and_demand_nodes(x, y, dem, facilities):
+    plt.figure(figsize=(10, 6))  # Set the figure size
+    plt.scatter(x, y, c='blue', label='Demand Nodes')  # Plot demand nodes
+    facilities_x = [facility[0] for facility in facilities]
+    facilities_y = [facility[1] for facility in facilities]
+    plt.scatter(facilities_x, facilities_y, c='red', label='Facilities')  # Plot facilities
+
+    # Draw lines from each demand node to the closest facility
+    for i in range(len(x)):
+        closest_facility = min(facilities, key=lambda facility: euclidean_distance(x[i], y[i], facility[0], facility[1]))
+        plt.plot([x[i], closest_facility[0]], [y[i], closest_facility[1]], 'k--', linewidth=0.5)
+
+    plt.title('Facility and Demand Node Assignments')
+    plt.xlabel('X Coordinate')
+    plt.ylabel('Y Coordinate')
+    plt.legend()
+    plt.show()
+
+
 
 start_time = time.time()
 file_paths = {
@@ -112,6 +133,8 @@ for p in [9, 10, 11]:
     print(f"\nRunning iterated local search for eil76 with p={p}")
     iterated_local_search(x76, y76, dem76, p)
 
+best_solution, best_evaluation = iterated_local_search(x51, y51, dem51, p=5)
+plot_facilities_and_demand_nodes(x51, y51, dem51, best_solution)
 end_time= time.time()
 total_runtime = end_time - start_time
 print(f"Total run time of the script: {total_runtime:.2f} seconds.")
